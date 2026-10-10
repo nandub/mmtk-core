@@ -94,7 +94,19 @@ pub(super) fn align_metadata_address(
 pub(crate) fn ensure_munmap_metadata(start: Address, size: usize) {
     trace!("ensure_munmap_metadata({}, 0x{:x})", start, size);
 
-    assert!(OS::munmap(start, size).is_ok())
+    #[cfg(target_os = "windows")]
+    {
+        // The metadata base is a process-lifetime reservation. Release of a
+        // subrange with MEM_RELEASE is invalid on Windows. Decommit pages
+        // without releasing address-space ownership instead.
+        OS::decommit_metadata_test_range(start, size).unwrap_or_else(|error| {
+            panic!("Windows metadata cleanup failed: start={start}, size={size}, error={error}")
+        });
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        assert!(OS::munmap(start, size).is_ok());
+    }
 }
 
 /// Unmaps a metadata space (`spec`) for the specified data address range (`start` and `size`)

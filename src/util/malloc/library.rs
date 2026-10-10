@@ -2,9 +2,15 @@
 
 #[cfg(feature = "malloc_jemalloc")]
 pub use self::jemalloc::*;
-#[cfg(not(any(feature = "malloc_jemalloc", feature = "malloc_mimalloc",)))]
+#[cfg(all(
+    not(target_os = "windows"),
+    not(any(feature = "malloc_jemalloc", feature = "malloc_mimalloc"))
+))]
 pub use self::libc_malloc::*;
-#[cfg(feature = "malloc_mimalloc")]
+#[cfg(any(
+    feature = "malloc_mimalloc",
+    all(target_os = "windows", not(feature = "malloc_jemalloc"))
+))]
 pub use self::mimalloc::*;
 
 /// When we count page usage of library malloc, we assume they allocate in pages. For some malloc implementations,
@@ -28,7 +34,10 @@ mod jemalloc {
     pub use jemalloc_sys::malloc_usable_size;
 }
 
-#[cfg(feature = "malloc_mimalloc")]
+#[cfg(any(
+    feature = "malloc_mimalloc",
+    all(target_os = "windows", not(feature = "malloc_jemalloc"))
+))]
 mod mimalloc {
     // OS page accounting
     pub const LOG_BYTES_IN_MALLOC_PAGE: u8 = crate::util::constants::LOG_BYTES_IN_PAGE;
@@ -43,7 +52,10 @@ mod mimalloc {
 }
 
 /// If no malloc lib is specified, use the libc implementation
-#[cfg(not(any(feature = "malloc_jemalloc", feature = "malloc_mimalloc",)))]
+#[cfg(all(
+    not(target_os = "windows"),
+    not(any(feature = "malloc_jemalloc", feature = "malloc_mimalloc"))
+))]
 mod libc_malloc {
     // OS page
     pub const LOG_BYTES_IN_MALLOC_PAGE: u8 = crate::util::constants::LOG_BYTES_IN_PAGE;

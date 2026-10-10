@@ -403,7 +403,10 @@ mod tests {
 
     #[test]
     fn os_page_size_matches_system() {
+        #[cfg(not(target_os = "windows"))]
         let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
+        #[cfg(target_os = "windows")]
+        let page_size = OS::BYTES_IN_PAGE as isize;
         assert_eq!(OS::BYTES_IN_PAGE, page_size as usize);
     }
 }

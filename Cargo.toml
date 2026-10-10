@@ -282,3 +282,6 @@ marksweep_as_nonmoving = []
 
 # If there are more groups, they should be inserted above this line
 # Group:end
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = '0.59', features = ['Win32_System_Memory', 'Win32_System_SystemInformation', 'Win32_System_Threading', 'Win32_Foundation'] }

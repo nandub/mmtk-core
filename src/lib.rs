@@ -20,6 +20,11 @@
 //!   i.e. [the memory manager API](memory_manager/index.html) that allows a language's memory manager to use MMTk
 //!   and [the VMBinding trait](vm/trait.VMBinding.html) that allows MMTk to call the language implementation.
 
+#[cfg(all(target_os = "windows", not(feature = "malloc_mimalloc")))]
+compile_error!(
+    "Windows requires --features malloc_mimalloc until CRT allocator parity is implemented"
+);
+
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
