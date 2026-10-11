@@ -43,3 +43,18 @@ __pycache__
 /process_and_memory_basics
 /**/*.v27-prepatch.bak
 *.bak
+
+# .NET build artifacts
+[Bb]in/
+[Oo]bj/
+
+# .NET IDE and user-specific files
+.vs/
+*.user
+*.suo
+*.rsuser
+
+# .NET test and coverage output
+TestResults/
+coverage/
+coverage.cobertura.xml
