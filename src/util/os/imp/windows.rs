@@ -530,6 +530,10 @@ impl OSProcess for Windows {
 }
 
 #[cfg(test)]
+#[path = "windows_contract_tests.rs"]
+mod windows_contract_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     #[test]
