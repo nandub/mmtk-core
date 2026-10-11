@@ -33,3 +33,13 @@ Cargo.lock
 
 # Python script cache
 __pycache__
+
+# Local Windows port diagnostic artifacts
+/.windows-port-backup/
+/windows-*-tests.log
+/*.log
+/src/*.rs.*.bak
+/aligned_reservation_commit_decommit_and_release
+/process_and_memory_basics
+/**/*.v27-prepatch.bak
+*.bak

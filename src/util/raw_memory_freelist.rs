@@ -233,8 +233,11 @@ impl RawMemoryFreeList {
         );
         assert!(
             res.is_ok(),
-            "Failed to mmap memory for RawMemoryFreeList: start = {start}, bytes = {bytes}, strategy = {:?}",
-            self.strategy
+            "Failed to mmap memory for RawMemoryFreeList: \
+             start = {start}, bytes = {bytes}, strategy = {:?}, \
+             underlying error = {:?}",
+            self.strategy,
+            res.err()
         );
     }
     pub fn get_limit(&self) -> Address {
@@ -266,7 +269,7 @@ impl Drop for RawMemoryFreeList {
  * 2. `RawMemoryFreeList` should implement `Drop` trait to unmap the memory properly at the end of each test.
  */
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::FreeList;
     use super::*;
     use std::sync::{Mutex, MutexGuard};
@@ -278,7 +281,7 @@ mod tests {
         /**
          * See documentation of `mod tests` above for for the necessity of this mutex.
          */
-        static ref MUTEX: Mutex<()> = Mutex::new(());
+        pub(crate) static ref MUTEX: Mutex<()> = Mutex::new(());
     }
 
     fn new_raw_memory_freelist<'a>(

@@ -20,6 +20,10 @@ use windows_sys::Win32::System::Threading::{
 
 pub struct Windows;
 
+#[cfg(all(test, target_os = "windows"))]
+#[path = "windows_stress_tests.rs"]
+mod windows_stress_tests;
+
 fn info() -> SYSTEM_INFO {
     let mut value = MaybeUninit::<SYSTEM_INFO>::zeroed();
     unsafe {
@@ -181,12 +185,26 @@ fn map_at(
     let pointer =
         unsafe { VirtualAlloc(address.to_mut_ptr(), bytes, flags, protect(strategy.prot)) };
     if pointer.is_null() {
-        return Err(mmap_error(
-            address,
-            bytes,
-            annotation,
-            Error::last_os_error(),
-        ));
+        let error = Error::last_os_error();
+        #[cfg(debug_assertions)]
+        {
+            match query(address.as_usize()) {
+                Ok(state) => eprintln!(
+                    "MMTk Windows VirtualAlloc failure: address={address}, bytes={bytes}, flags=0x{flags:x}, replace={}, reserve={}, state=0x{:x}, allocation_base={:p}, region_size={}, error={error}",
+                    strategy.replace,
+                    strategy.reserve,
+                    state.State,
+                    state.AllocationBase,
+                    state.RegionSize,
+                ),
+                Err(query_error) => eprintln!(
+                    "MMTk Windows VirtualAlloc failure: address={address}, bytes={bytes}, flags=0x{flags:x}, replace={}, reserve={}, query_error={query_error}, error={error}",
+                    strategy.replace,
+                    strategy.reserve,
+                ),
+            }
+        }
+        return Err(mmap_error(address, bytes, annotation, error));
     }
     let result = Address::from_mut_ptr(pointer);
     if !address.is_zero() && result != address {
@@ -516,6 +534,9 @@ mod tests {
     use super::*;
     #[test]
     fn process_and_memory_basics() {
+        let _vm_test_lock = crate::util::raw_memory_freelist::tests::MUTEX
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         assert!(Windows::get_process_id().unwrap() > 0);
         assert!(Windows::get_thread_id().unwrap() > 0);
         assert!(Windows::get_total_num_cpus() > 0);
@@ -534,6 +555,9 @@ mod tests {
 
     #[test]
     fn aligned_reservation_commit_decommit_and_release() {
+        let _vm_test_lock = crate::util::raw_memory_freelist::tests::MUTEX
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let annotation = MmapAnnotation::Misc {
             name: "windows-large-alignment",
         };
@@ -571,6 +595,9 @@ mod tests {
     }
     #[test]
     fn fixed_replacement_inside_reservation() {
+        let _vm_test_lock = crate::util::raw_memory_freelist::tests::MUTEX
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let anno = MmapAnnotation::Misc {
             name: "windows-replacement-test",
         };
@@ -598,6 +625,9 @@ mod tests {
 
     #[test]
     fn munmap_releases_multiple_complete_reservations() {
+        let _vm_test_lock = crate::util::raw_memory_freelist::tests::MUTEX
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let anno = MmapAnnotation::Misc {
             name: "windows-multiple-reservations",
         };
@@ -619,6 +649,9 @@ mod tests {
 
     #[test]
     fn munmap_skips_free_gaps_between_complete_reservations() {
+        let _vm_test_lock = crate::util::raw_memory_freelist::tests::MUTEX
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let anno = MmapAnnotation::Misc {
             name: "windows-free-gap-unmap",
         };
@@ -640,6 +673,9 @@ mod tests {
 
     #[test]
     fn munmap_already_free_range_is_idempotent() {
+        let _vm_test_lock = crate::util::raw_memory_freelist::tests::MUTEX
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let anno = MmapAnnotation::Misc {
             name: "windows-idempotent-unmap",
         };
@@ -652,6 +688,9 @@ mod tests {
 
     #[test]
     fn munmap_rejects_partial_reservation_without_releasing_it() {
+        let _vm_test_lock = crate::util::raw_memory_freelist::tests::MUTEX
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let anno = MmapAnnotation::Misc {
             name: "windows-partial-unmap-rejection",
         };
@@ -669,6 +708,9 @@ mod tests {
 
     #[test]
     fn metadata_test_decommit_preserves_neighbor_and_recommits_zeroed() {
+        let _vm_test_lock = crate::util::raw_memory_freelist::tests::MUTEX
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let annotation = MmapAnnotation::Misc {
             name: "windows-metadata-decommit",
         };
@@ -705,6 +747,9 @@ mod tests {
 
     #[test]
     fn metadata_test_decommit_rejects_free_range() {
+        let _vm_test_lock = crate::util::raw_memory_freelist::tests::MUTEX
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let annotation = MmapAnnotation::Misc {
             name: "windows-metadata-free-decommit",
         };
